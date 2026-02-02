@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  role        Role     @default(OPERATOR)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  transactions Transaction[]
+  
+  @@map("users")
+}
+
+model Client {
+  id           String   @id @default(cuid())
+  name         String
+  documentType String?  // Tipo de documento: RFC, CURP, etc.
+  document     String?  @unique
+  address      String?
+  phone        String?
+  email        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  transactions Transaction[]
+  
+  @@map("clients")
+}
+
+model Material {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  category    String
+  price       Float    // Precio unitario
+  stock       Float    @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  transactionDetails TransactionDetail[]
+  inventoryMovements  InventoryMovement[]
+  
+  @@map("materials")
+}
+
+model Transaction {
+  id              String          @id @default(cuid())
+  folio           String          @unique
+  type            TransactionType
+  source          Source          // Fuente de captura
+  plates          String?         // Placas del vehículo
+  totalWeight     Float           @default(0)
+  totalAmount     Float           @default(0)
+  status          TransactionStatus @default(PENDING)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  clientId     String?
+  client       Client?          @relation(fields: [clientId], references: [id])
+  userId       String
+  user         User             @relation(fields: [userId], references: [id])
+  details      TransactionDetail[]
+  
+  @@map("transactions")
+}
+
+model TransactionDetail {
+  id            String   @id @default(cuid())
+  quantity      Float    // Cantidad en kg
+  unitPrice     Float    // Precio unitario
+  subtotal      Float    // quantity * unitPrice
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  materialId    String
+  material      Material    @relation(fields: [materialId], references: [id])
+  
+  @@map("transaction_details")
+}
+
+model InventoryMovement {
+  id          String           @id @default(cuid())
+  type        MovementType
+  quantity    Float           // Cantidad movida
+  balance     Float           // Saldo después del movimiento
+  reference   String?         // Referencia a folio o documento
+  createdAt   DateTime         @default(now())
+  
+  // Relations
+  materialId  String
+  material    Material         @relation(fields: [materialId], references: [id])
+  
+  @@map("inventory_movements")
+}
+
+enum Role {
+  ADMIN
+  SUPERVISOR
+  OPERATOR
+}
+
+enum TransactionType {
+  PURCHASE  // Compra
+  SALE      // Venta
+}
+
+enum Source {
+  KEYBOARD       // Teclado
+  TOUCH_DISPLAY  // Touch display
+  SCALE_001      // Báscula-001
+  SCALE_002      // Báscula-002
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum MovementType {
+  IN    // Entrada de inventario
+  OUT   // Salida de inventario
+  ADJUST // Ajuste
+}
