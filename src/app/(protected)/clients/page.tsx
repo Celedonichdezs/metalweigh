@@ -119,7 +119,7 @@ export default async function ClientsPage({
                 </tr>
               </thead>
               <tbody>
-                {clients.map((client) => (
+                {clients.map((client: any) => (
                   <tr key={client.id} className="border-b">
                     <td className="px-3 py-2 font-medium">{client.name}</td>
                     <td className="px-3 py-2">

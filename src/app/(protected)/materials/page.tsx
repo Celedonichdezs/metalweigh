@@ -118,7 +118,7 @@ export default async function MaterialsPage() {
                  </tr>
                </thead>
                <tbody>
-                 {materials.map((m) => (
+                 {materials.map((m: any) => (
                    <tr key={m.id} className="border-b">
                      <td className="px-3 py-2">{m.code}</td>
                      <td className="px-3 py-2">{m.name}</td>
