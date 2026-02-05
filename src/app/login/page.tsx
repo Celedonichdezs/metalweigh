@@ -1,78 +1,100 @@
  'use client'
- 
- import { useState } from 'react'
- import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
- import { Input } from '@/components/ui/input'
- import { Button } from '@/components/ui/button'
- 
- export default function LoginPage() {
-   const router = useRouter()
-   const [email, setEmail] = useState('')
-   const [password, setPassword] = useState('')
-   const [loading, setLoading] = useState(false)
-   const [error, setError] = useState<string | null>(null)
- 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
 
-  // Debug: Mostrar variables de entorno (solo en desarrollo)
-  if (typeof window !== 'undefined') {
-    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log('Supabase Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Inicializar Supabase una sola vez (memoizado)
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!url || !key) {
+      throw new Error('Supabase environment variables are not configured')
+    }
+
+    return createBrowserClient(url, key)
+  }, [])
+  async function ensureUser(email: string) {
+    try {
+      const response = await fetch('/api/auth/ensure-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (!response.ok) {
+        console.error('Error ensuring user:', response.statusText)
+      }
+    } catch (err) {
+      console.error('Error in ensureUser:', err)
+    }
   }
 
-   async function ensureUser(email: string) {
-     await fetch('/api/auth/ensure-user', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ email }),
-     })
-   }
- 
   async function onSignIn(e: React.FormEvent) {
-     e.preventDefault()
-     setError(null)
-     setLoading(true)
-     
-     console.log('Intentando login con:', email)
-     
-    const { error, data } = await supabase.auth.signInWithPassword({
-       email,
-       password,
-     })
-    
-    console.log('Resultado login:', { error, data })
-    
-     if (error) {
-       console.error('Error de login:', error.message)
-       setError(error.message)
-       setLoading(false)
-       return
-     }
-     console.log('Login exitoso!')
-     await ensureUser(email)
-    router.refresh()
-     router.push('/dashboard')
-   }
- 
-   async function onSignUp(e: React.FormEvent) {
-     e.preventDefault()
-     setError(null)
-     setLoading(true)
-    const { error } = await supabase.auth.signUp({
-       email,
-       password,
-     })
-     if (error) {
-       setError(error.message)
-       setLoading(false)
-       return
-     }
-     setLoading(false)
-   }
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    try {
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+        return
+      }
+
+      // Usuario autenticado exitosamente
+      if (data.user?.email) {
+        await ensureUser(data.user.email)
+      }
+      router.push('/dashboard')
+    } catch (err) {
+      setError('Error durante el login. Intenta nuevamente.')
+      setLoading(false)
+    }
+  }
+
+  async function onSignUp(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+        return
+      }
+
+      // Limpiar formulario
+      setEmail('')
+      setPassword('')
+      setError(null)
+      alert('Cuenta creada. Por favor verifica tu correo electrónico')
+    } catch (err) {
+      setError('Error durante el registro. Intenta nuevamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
  
    return (
      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">

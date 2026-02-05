@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { 
   LayoutDashboard, 
   Package, 
@@ -32,33 +32,48 @@ export function AppSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<{ name?: string; email: string } | null>(null)
 
+  // Inicializar Supabase una sola vez
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!url || !key) {
+      console.error('Supabase environment variables are not configured')
+      return null
+    }
+
+    return createBrowserClient(url, key)
+  }, [])
+
   useEffect(() => {
+    if (!supabase) return
+
     const getUser = async () => {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-      
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUser({
-          name: user.user_metadata?.name || user.email?.split('@')[0],
-          email: user.email!
-        })
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setUser({
+            name: user.user_metadata?.name || user.email?.split('@')[0],
+            email: user.email!
+          })
+        }
+      } catch (error) {
+        console.error('Error getting user:', error)
       }
     }
     
     getUser()
-  }, [])
+  }, [supabase])
 
   const handleSignOut = async () => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-    await supabase.auth.signOut()
-    router.refresh()
-    router.push('/login')
+    if (!supabase) return
+    
+    try {
+      await supabase.auth.signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
   }
 
   return (
