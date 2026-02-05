@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
-    "build:vercel": "NODE_OPTIONS='--max-old-space-size=2048' NEXT_BUILD_WORKERS=1 next build",
+    "build": "prisma generate && next build",
+    "build:vercel": "prisma generate && NODE_OPTIONS='--max-old-space-size=2048' NEXT_BUILD_WORKERS=1 next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
