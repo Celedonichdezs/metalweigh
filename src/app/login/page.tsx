@@ -18,6 +18,12 @@ import { createBrowserClient } from '@supabase/ssr'
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // Debug: Mostrar variables de entorno (solo en desarrollo)
+  if (typeof window !== 'undefined') {
+    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log('Supabase Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  }
+
    async function ensureUser(email: string) {
      await fetch('/api/auth/ensure-user', {
        method: 'POST',
@@ -30,15 +36,23 @@ import { createBrowserClient } from '@supabase/ssr'
      e.preventDefault()
      setError(null)
      setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
+     
+     console.log('Intentando login con:', email)
+     
+    const { error, data } = await supabase.auth.signInWithPassword({
        email,
        password,
      })
+    
+    console.log('Resultado login:', { error, data })
+    
      if (error) {
+       console.error('Error de login:', error.message)
        setError(error.message)
        setLoading(false)
        return
      }
+     console.log('Login exitoso!')
      await ensureUser(email)
     router.refresh()
      router.push('/dashboard')
