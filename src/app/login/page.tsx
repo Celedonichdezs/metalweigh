@@ -76,11 +76,11 @@ import { createBrowserClient } from '@supabase/ssr'
  
    return (
      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-       <div className="w-full max-w-sm rounded-lg border bg-white p-6 shadow-sm dark:bg-neutral-900">
+       <div className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm dark:bg-neutral-900">
          <h1 className="mb-4 text-xl font-semibold">Acceso</h1>
          <form onSubmit={onSignIn} className="space-y-4">
            <div className="space-y-2">
-             <label className="text-sm">Correo</label>
+             <label className="text-sm font-medium">Correo</label>
              <Input
                type="email"
                value={email}
@@ -90,17 +90,17 @@ import { createBrowserClient } from '@supabase/ssr'
              />
            </div>
            <div className="space-y-2">
-             <label className="text-sm">Contraseña</label>
+             <label className="text-sm font-medium">Contraseña</label>
              <Input
                type="password"
                value={password}
                onChange={(e) => setPassword(e.target.value)}
-               placeholder="••••••••"
+               placeholder="•••••••"
                required
              />
            </div>
            {error && (
-             <div className="text-sm text-red-600">{error}</div>
+             <div className="text-sm text-red-600 bg-red-50 p-3 rounded">{error}</div>
            )}
            <Button type="submit" disabled={loading} className="w-full">
              {loading ? 'Cargando...' : 'Entrar'}

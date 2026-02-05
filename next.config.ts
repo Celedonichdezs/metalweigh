@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
   },
   compress: true,
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/login',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
