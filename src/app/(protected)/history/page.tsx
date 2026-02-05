@@ -323,7 +323,7 @@ export default async function HistoryPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.map((transaction) => (
+                    {transactions.map((transaction: any) => (
                       <tr key={transaction.id} className="border-b">
                         <td className="px-3 py-2 font-mono font-medium">
                           {transaction.folio}
