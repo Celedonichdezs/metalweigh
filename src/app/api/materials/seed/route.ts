@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// Materiales comunes de reciclaje ordenados alfabéticamente
+// Materiales usados en MetalWeigh
 const materials = [
-  { code: 'ALUM-001', name: 'Aluminio', category: 'Metales', price: 20.50 },
-  { code: 'BRCE-001', name: 'Bronce', category: 'Metales', price: 45.00 },
-  { code: 'CBL-001', name: 'Cable de Cobre', category: 'Metales', price: 120.00 },
-  { code: 'CART-001', name: 'Cartón', category: 'Papel', price: 1.50 },
-  { code: 'COPR-001', name: 'Cobre', category: 'Metales', price: 125.00 },
-  { code: 'HIER-001', name: 'Hierro', category: 'Metales', price: 3.50 },
-  { code: 'LAT-001', name: 'Lata', category: 'Metales', price: 2.00 },
-  { code: 'LAT-002', name: 'Lata de Aluminio', category: 'Metales', price: 15.00 },
-  { code: 'PLAS-001', name: 'Plástico PET', category: 'Plásticos', price: 2.50 },
-  { code: 'VIDR-001', name: 'Vidrio', category: 'Vidrio', price: 0.80 },
-  { code: 'ZINC-001', name: 'Zinc', category: 'Metales', price: 8.00 }
+  { code: 'ANT', name: 'Antimonio', category: 'Metal', price: 15 },
+  { code: 'BAT', name: 'Batería', category: 'Electrónico', price: 12 },
+  { code: 'BLD', name: 'Blando', category: 'Metal', price: 24 },
+  { code: 'BOT', name: 'Bote', category: 'Contenedor', price: 29 },
+  { code: 'BRO', name: 'Bronce', category: 'Metal', price: 116 },
+  { code: 'CUP1', name: 'Cobre 1a', category: 'Metal', price: 176 },
+  { code: 'CUP2', name: 'Cobre 2a', category: 'Metal', price: 163 },
+  { code: 'MAC', name: 'Macizo', category: 'Metal', price: 28 },
+  { code: 'OTR', name: 'Otros', category: 'Varios', price: 10 },
+  { code: 'PRF', name: 'Perfil', category: 'Metal', price: 38 },
+  { code: 'RAD-ALC', name: 'Radiador Alco', category: 'Radiador', price: 78 },
+  { code: 'RAD-ALU', name: 'Radiador Aluminio', category: 'Radiador', price: 22 },
+  { code: 'RAD-BRO', name: 'Radiador Bronce', category: 'Radiador', price: 98 },
+  { code: 'RIN', name: 'Rin', category: 'Automotriz', price: 42 },
+  { code: 'SPR', name: 'Spray', category: 'Químico', price: 15 },
+  { code: 'TRS', name: 'Traste', category: 'Contenedor', price: 33 },
 ]
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // Crear materiales si no existen
     const results = []
     
     for (const material of materials) {
-      // Verificar si el material ya existe por código o nombre
-      const existingMaterial = await prisma.material.findFirst({
-        where: {
-          OR: [
-            { code: material.code },
-            { name: material.name }
-          ]
-        }
+      // Verificar si el material ya existe por código
+      const existingMaterial = await prisma.material.findUnique({
+        where: { code: material.code }
       })
       
       if (!existingMaterial) {
@@ -40,24 +40,32 @@ export async function POST(request: NextRequest) {
             category: material.category,
             price: material.price,
             stock: 0,
-            isActive: true
+            isActive: true,
+            description: `${material.name} - Precio unitario: ${material.price}`
           }
         })
-        results.push({ action: 'created', material: created })
+        results.push({ action: 'created', name: created.name, price: created.price })
       } else {
-        results.push({ action: 'exists', material: existingMaterial })
+        results.push({ action: 'exists', name: existingMaterial.name })
       }
     }
 
+    const createdCount = results.filter(r => r.action === 'created').length
     return NextResponse.json({
-      message: 'Materiales procesados exitosamente',
-      results
+      success: true,
+      message: `Materiales procesados: ${createdCount} nuevos, ${results.filter(r => r.action === 'exists').length} existentes`,
+      results,
+      total: results.length
     })
   } catch (error) {
-    console.error('Error creating materials:', error)
+    console.error('Error seeding materials:', error)
     return NextResponse.json(
-      { error: 'Error creating materials' },
+      { error: 'Error creating materials', details: String(error) },
       { status: 500 }
     )
   }
+}
+
+export async function POST(request: NextRequest) {
+  return GET(request)
 }
