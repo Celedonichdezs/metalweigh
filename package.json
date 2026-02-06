@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "build:vercel": "prisma generate && NODE_OPTIONS='--max-old-space-size=2048' NEXT_BUILD_WORKERS=1 next build",
+    "build:vercel": "prisma generate && NODE_OPTIONS='--max-old-space-size=2048' NEXT_BUILD_WORKERS=1 next build && prisma migrate deploy --skip-generate || true",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
